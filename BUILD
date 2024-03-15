@@ -25,8 +25,8 @@ py_binary(
 )
 
 sh_binary(
-    name = "deploy",
-    srcs = ["deploy.sh"],
+    name = "run",
+    srcs = ["run.sh"],
     data = [
         "//:main",
     ],
