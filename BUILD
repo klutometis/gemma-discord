@@ -16,6 +16,18 @@ py_binary(
     srcs = ["main.py"],
     deps = [
         requirement("discord"),
+        requirement("langchain"),
+        requirement("langchain-core"),
+        requirement("langchain-google-vertexai"),
+        requirement("pyparsing"),
     ],
     data = [":requirements", "params.json"],
+)
+
+sh_binary(
+    name = "deploy",
+    srcs = ["deploy.sh"],
+    data = [
+        "//:main",
+    ],
 )
