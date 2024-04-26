@@ -1,5 +1,7 @@
+absl-py
 discord
 langchain
 langchain-core
 langchain-google-vertexai
+langchain-groq
 pyparsing

@@ -24,10 +24,19 @@ py_binary(
     data = [":requirements", "params.json"],
 )
 
+py_binary(
+    name = "llama",
+    srcs = ["llama.py"],
+    deps = [
+    ],
+    data = [":requirements", "params.json"],
+)
+
 sh_binary(
     name = "run",
     srcs = ["run.sh"],
     data = [
-        "//:main",
+        ":main",
+        ":llama",
     ],
 )
