@@ -1,4 +1,3 @@
-import asyncio
 import functools
 import json
 import logging
@@ -10,11 +9,12 @@ from langchain.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
-    SystemMessagePromptTemplate,
 )
-from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain.schema import SystemMessage
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.output_parsers.string import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_groq import ChatGroq
 
 
@@ -38,6 +38,15 @@ def purge_mentions(message: str):
         + pyparsing.SkipTo(">", include=True).suppress()
     )
     return mentions.transform_string(message)
+
+
+store = {}
+
+
+def get_session_history(session_id: str) -> BaseChatMessageHistory:
+    if session_id not in store:
+        store[session_id] = ChatMessageHistory()
+    return store[session_id]
 
 
 def main(argv):
@@ -71,24 +80,30 @@ def main(argv):
             prompt = ChatPromptTemplate.from_messages(
                 [
                     SystemMessage(
-                        "You are a Discord bot; please respond to user queries with brevity and wit. Be funny!"
+                        "You are a Discord bot; please respond to user "
+                        "queries with brevity and wit. Be funny!"
                     ),
-                    AIMessage("Ok!"),
-                    HumanMessagePromptTemplate.from_template("{prompt}"),
+                    MessagesPlaceholder(variable_name="history"),
+                    HumanMessagePromptTemplate.from_template("{input}"),
                 ]
             )
 
-            chain = (
-                {"prompt": RunnablePassthrough()}
-                | prompt
-                | get_llama()
-                | StrOutputParser()
+            chain = prompt | get_llama() | StrOutputParser()
+
+            with_message_history = RunnableWithMessageHistory(
+                chain,
+                get_session_history,
+                input_messages_key="input",
+                history_messages_key="history",
+            )
+
+            response = await with_message_history.ainvoke(
+                {"input": purged_content},
+                config={"configurable": {"session_id": message.author}},
             )
 
             # Send a direct message to the author
-            await message.channel.send(
-                f"{message.author.mention}, {await chain.ainvoke(purged_content)}"
-            )
+            await message.channel.send(f"{message.author.mention}, {response}")
 
     client.run(get_param("groq_token"))
 
