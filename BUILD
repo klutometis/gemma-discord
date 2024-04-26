@@ -29,8 +29,18 @@ py_binary(
     srcs = ["llama.py"],
     deps = [
     ],
-    data = [":requirements", "params.json"],
+    data = [":requirements", "params.json", ":bot"],
 )
+
+py_binary(
+    name = "gemini",
+    srcs = ["gemini.py"],
+    deps = [
+    ],
+    data = [":requirements", "params.json", ":bot"],
+)
+
+py_library(name = "bot", srcs = ["bot.py"])
 
 sh_binary(
     name = "run",
@@ -38,5 +48,6 @@ sh_binary(
     data = [
         ":main",
         ":llama",
+        ":gemini",
     ],
 )

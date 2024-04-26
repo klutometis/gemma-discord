@@ -2,17 +2,28 @@ import logging
 
 import discord
 from absl import app
-from langchain_groq import ChatGroq
+from langchain_google_genai import (
+    ChatGoogleGenerativeAI,
+    HarmBlockThreshold,
+    HarmCategory,
+)
 
 import bot
 
 
-def get_llama():
-    return ChatGroq(
+def get_gemini():
+    safety_settings = {
+        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,  # noqa: 501
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,  # noqa: 501
+    }
+
+    return ChatGoogleGenerativeAI(
+        model="gemini-pro",
+        google_api_key=bot.get_param("gemini"),
         temperature=1.0,
-        groq_api_key=bot.get_param("groq"),
-        model_name="llama3-70b-8192",
-    )
+    ).bind(safety_settings=safety_settings)
 
 
 def main(argv):
@@ -39,9 +50,9 @@ def main(argv):
             client.user.mentioned_in(message)
             and message.mention_everyone is False
         ):
-            return await bot.prompt(message, get_llama())
+            return await bot.prompt(message, get_gemini())
 
-    client.run(bot.get_param("groq_token"))
+    client.run(bot.get_param("gemini_token"))
 
 
 if __name__ == "__main__":
